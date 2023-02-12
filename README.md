@@ -1,6 +1,11 @@
 # gfa-scoring-scripts
 Scoring scripts for use with SeeYou configured for GFA National Rules
 
-V12 => Current in use version, includes Ian's clean up.
+AusNationals2023.pas: implements most of the Australian Rules...
+     to do - competition floor
 
-V13 => Extends v12 to add in support for Pilot Event Starts - keeping seperate version for the moment... I know this is poor config practice!!!!
+TotalsScript.pas: contains logic to support laydays and pilot pairs.
+
+SGPNoScore.pas: Used to enable use of soaring spot and flight evaluation during SGP competitions.  Defaults scores to 0 as the primary scoring is completed via crosscountry.aero however, airspace validation and presentation is better using SeeYou.  Scorer needs to manually enter points and penalities into SeeYou based on the SGP scoring system.  Also created to enable soaringspot flight upload via glidingcomp.au which can then be fed into the SGP scoring system from a local directory on scoring computer.
+
+SGPNoScoreGawlerTZ.pas: Created to add an extra info line to explain the 1/2 hour difference as the Adelaide timezone is incorrect in SeeYou....   
