@@ -717,10 +717,10 @@ begin
 
 FloorWarning := '';
 if (FloorInUse) and (Pilots[i].start >= 0) and (Pilots[i].finish >= 0) then begin
-  showmessage('floor check for ' + Pilots[i].CompID);
+  //showmessage('floor check for ' + Pilots[i].CompID);
   NbrFixes := GetArrayLength(Pilots[i].Fixes);
   if NbrFixes > 0 then begin
-      showmessage('> 0 fixes');
+      //showmessage('> 0 fixes');
 			j := 0;
 			while (Pilots[i].Fixes[j].TSec < pilots[i].start) and (j < NbrFixes - 1) do begin
 				j := J + 1;
@@ -729,7 +729,7 @@ if (FloorInUse) and (Pilots[i].start >= 0) and (Pilots[i].finish >= 0) then begi
         j := J + 1;
       end;
       if (Pilots[i].Fixes[j].AltQnh < FloorAlt) then begin
-        FloorWarning := '***  Below Competition Floor ***'
+        FloorWarning := '*** Below Competition Floor ***'
       end;
 
   end;
