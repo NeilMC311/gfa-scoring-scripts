@@ -340,7 +340,7 @@ begin
   PreStartAltLimit	:= StrToInt(ParseDayTag(DayTag,'PRESTARTALT'),0);
   PreStartGSLimitkmh	:= StrToInt(ParseDayTag(DayTag,'PRESTARTGS'),0);
   PreStartGSLimit := round(PreStartGSLimitkmh * 1000 / 3600);
-  FloorAlt := StrToInt(ParseDayTag(DayTag,'FLOOR'),0)
+  FloorAlt := StrToInt(ParseDayTag(DayTag,'FLOOR'),0);
 
   //showmessage('int='+ inttostr(Interval) + ' NbrInt=' + inttostr(NumIntervals) + ' IntervalBuffer=' + inttostr(IntervalBuffer));
   //showmessage('StartBonus=' + inttostr(StartBonus) + ' BonusTime=' + inttostr(BonusTime) + ' BonusWindow=' + inttostr(BonusWindow));
