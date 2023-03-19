@@ -729,7 +729,7 @@ if (FloorInUse) and (Pilots[i].start >= 0) and (Pilots[i].finish >= 0) then begi
         j := J + 1;
       end;
       if (Pilots[i].Fixes[j].AltQnh < FloorAlt) then begin
-        FloorWarning := '*** Below Competition Floor ***'
+        FloorWarning := '*** Below Competition Floor ***';
       end;
 
   end;
