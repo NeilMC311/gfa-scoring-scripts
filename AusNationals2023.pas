@@ -9,9 +9,9 @@ program AusNats2023;
 // ****  Neil Campbell, 04 August 2018 v8                                             ****
 // ****  Neil Campbell, 06 December 2018 v9                                           ****
 // ****  Ian Steventon, 22 January 2019 v11                                           ****
-// ****  Neil Campbell, 28 January  2019 v12                                           ****
+// ****  Neil Campbell, 28 January  2019 v12                                          ****
 // ****  Neil Campbell, 20 October 2020 v13                                           ****
-// ****                                                                               ****
+// ****  Neil Campbell, 13 February 2023 V16                                          ****
 // ****                                                                               ****
 // **** I N S T R U C T I O N S                                                       ****
 // **** 1. Confirm Local Rules for variations of                                      ****
@@ -146,9 +146,25 @@ program AusNats2023;
 // ****    * Pilot Tag of "PREDEBUG" will generate a series of messsages windows to   ****
 // ****      help with any debugging - this will be removed later.                    ****
 // ****                                                                               ****
+// ****    C O M P E T I T I O N   F L O O R                                          ****
+// ****    ========================================================================== ****
+// ****    Australian Rule 32.9 Competition Floor                                     ****
+// ****    Day Tag Parameters:                                                        ****
+// ****      FLOOR => Altitude in metres.                                             ****
+// ****                                                                               ****
+// ****    Competition Parameters:                                                    ****
+// ****       "Expose fixes in Scripts" option must be ticked in the competition tab  ****
+// ****                                                                               ****
+// ****    Will provide user warning for any flight that decends below the floor      ****
+// ****    altitude between start and finish times.  Will only flag that there is     ****
+// ****    at least 1 point below the floor.  Will require manual inspection to       ****
+// ****    validate scenario(s).                                                      ****
+// ****                                                                               ****
 // ***************************************************************************************
 // ****                                                                               ****
 // ****   Version Details                                                             ****
+// ****   V16 - Competition Floor                                                     ****
+// ****                                                                               ****
 // ****   V15 - Pilot Event Markers - align to 2022/23 rules reverting the special    ****
 // ****         Benalla rules in version 14p2                                         ****
 // ****                                                                               ****
@@ -242,6 +258,10 @@ var
   PreStartWarning : string;
   // event checking
   EventCount : integer;
+  // Competition Floor 
+  FloorInUse : Boolean;
+  FloorAlt : Double;
+  FloorWarning : string;
   
   
 // ***************************************************************************************
@@ -320,7 +340,8 @@ begin
   PreStartAltLimit	:= StrToInt(ParseDayTag(DayTag,'PRESTARTALT'),0);
   PreStartGSLimitkmh	:= StrToInt(ParseDayTag(DayTag,'PRESTARTGS'),0);
   PreStartGSLimit := round(PreStartGSLimitkmh * 1000 / 3600);
-  
+  FloorAlt := StrToInt(ParseDayTag(DayTag,'FLOOR'),0);
+
   //showmessage('int='+ inttostr(Interval) + ' NbrInt=' + inttostr(NumIntervals) + ' IntervalBuffer=' + inttostr(IntervalBuffer));
   //showmessage('StartBonus=' + inttostr(StartBonus) + ' BonusTime=' + inttostr(BonusTime) + ' BonusWindow=' + inttostr(BonusWindow));
   //showmessage('PEVWait =' + inttostr(PEVWait) + ' Window =' + inttostr(PEVWindow));
@@ -353,6 +374,8 @@ begin
     Info2 := 'ERROR: Start Intervals and Pilot Event Start can not be used at the same time';
     exit;
   end;
+
+  if (FloorAlt > 0) then FloorInUse := TRUE else FloorInUse := False;
  
   // Start time bonus calculation 
   // Save bonus points in pilot[].td3 as start times will change if intervals are in use as well.
@@ -568,72 +591,7 @@ begin
 			end;   // (ValidPev)
 
 			
-		end;//WHILE	
-		// 	///// ******************************************* remove from below 
-		//     if (PEVDEBUG) then showmessage('Marker=>' + inttostr(pilots[i].Markers[j].Tsec) + ' WindowStart => ' + inttostr(PEVWindowStart));
-			
-		// 	if (j< LastEventNbr) then begin   // there is a subsequent event so check to see if it overlaps
-		// 		if (PEVDEBUG) then showmessage('there is a subsequent event to check which is at => ' + inttostr(pilots[i].Markers[j+1].Tsec));
-				
-		// 		if (pilots[i].Markers[j+1].Tsec < PEVWindowStart) then begin
-    // 				if (PEVDEBUG) then showmessage('next one is less than window start to restart loop');
-		// 			j := j + 1;  // next event is prior to window start so just skip to that one.
-		// 			if (PEVDEBUG) then showmessage('restarting loop with j = ' + inttostr(j));
-		// 		end
-		// 		else begin
-		// 			PEVWindowEnd := PEVWindowStart + PevWindow;	
-		// 			if (PEVDEBUG) then showmessage('WindowEnd =>' + inttostr(PEVWindowEnd) + 'next marker ' + inttostr(pilots[i].Markers[j+1].Tsec));
-		// 			if (pilots[i].Markers[j+1].Tsec < PEVWindowEnd) then begin
-		// 				PEVWindowEnd := pilots[i].Markers[j+1].Tsec;
-		// 				if (PEVDEBUG) then showmessage('uPDETED WINDOW END TO WindowEnd =>' + inttostr(PEVWindowEnd));
-		// 			end;
-		// 			// we have ourselves a window so check if the start happened in it
-		// 			if (PEVDEBUG) then showmessage('checking window  start =>' + formatfloat('0.0',Pilots[i].start) + ' WS=>' + inttostr(PEVWindowStart) + 'WE=>' + inttostr(PEVWindowEnd));
-		// 			if (Pilots[i].start >= PEVWindowStart) and (Pilots[i].start < PEVWindowEND) then begin
-		// 				ValidPEVStart := TRUE;  //it does so we are done
-		// 				if (PEVDEBUG) then showmessage('We have a valid PEV STart so stop');
-		// 			end
-		// 			else begin
-		// 				if (PEVDEBUG) then showmessage('We dont have a valid PEVStart');
-		// 				if (Pilots[i].start < PEVWindowStart) then begin
-		// 					if (PEVDEBUG) then showmessage('Start < WindowStart');
-		// 					PEVWindowAfterStartFound := TRUE;
-		// 				end else begin
-		// 					if (PEVDEBUG) then showmessage('Start not < WindowStart so setting PreviousPev');
-		// 					PreviousPEVWindowStart := PEVWindowStart;
-		// 					PreviousPEVWindowEnd := PEVWindowEnd;
-		// 					StartGreaterThanWindow := TRUE;
-		// 				end;
-		// 				j := j + 1;  //it does not so lets check the next one.
-		// 			end;
-		// 		end;	
-		// 	end	
-		// 	else begin // this is the last event 
-		// 		if (PEVDEBUG) then showmessage('this the last event to check');
-		// 		PEVWindowEnd := PEVWindowStart + PevWindow;
-		// 		if (PEVDEBUG) then showmessage('Marker: ' + inttostr(pilots[i].Markers[j].Tsec) + ' WS=>' + inttostr(PEVWindowStart) + ' WE=>' + inttostr(PEVWindowEnd) + ' start =>' + formatfloat('0.0',Pilots[i].start));
-		// 		// we have ourselves a window so check if the start happened in it
-		// 		if (Pilots[i].start >= PEVWindowStart) and (Pilots[i].start < PEVWindowEND) then begin
-		// 				ValidPEVStart := TRUE;  //it does so we are done
-		// 				if (PEVDEBUG) then showmessage('We have a valid PEV STart so stop');
-		// 		end
-		// 		else begin
-    //                 if (PEVDEBUG) then showmessage('not a valid start in window');				     
-		// 			if (Pilots[i].start < PEVWindowStart) then begin
-		// 					PEVWindowAfterStartFound := TRUE;
-		// 					if (PEVDEBUG) then showmessage('after window found');
-		// 			end else begin
-		// 				if (PEVDEBUG) then showmessage('previous window found');
-		// 					PreviousPEVWindowStart := PEVWindowStart;
-		// 					PreviousPEVWindowEnd := PEVWindowEnd;
-		// 					StartGreaterThanWindow := TRUE;
-		// 			end;
-		// 		end;
-		// 		PEVCheckNext := FALSE;
-		// 	end;	
-		// end; 
-		// // remove above
-
+		end;
 		
 		if (PEVDEBUG) then showmessage('Now evaluate the windows');
 	
@@ -755,7 +713,27 @@ begin
 			end;
 		end;	
 	end;
-  
+// Competition Floor implementation
+
+FloorWarning := '';
+if (FloorInUse) and (Pilots[i].start >= 0) and (Pilots[i].finish >= 0) then begin
+  //showmessage('floor check for ' + Pilots[i].CompID);
+  NbrFixes := GetArrayLength(Pilots[i].Fixes);
+  if NbrFixes > 0 then begin
+      //showmessage('> 0 fixes');
+			j := 0;
+			while (Pilots[i].Fixes[j].TSec < pilots[i].start) and (j < NbrFixes - 1) do begin
+				j := J + 1;
+			end;
+      while (Pilots[i].Fixes[j].TSec < Pilots[i].finish) and (j < NbrFixes - 1) and (Pilots[i].Fixes[j].AltQnh >= FloorAlt) do begin
+        j := J + 1;
+      end;
+      if (Pilots[i].Fixes[j].AltQnh < FloorAlt) then begin
+        FloorWarning := '*** Below Competition Floor ***'
+      end;
+
+  end;
+end;  
       // Manage User Warnings
 	Pilots[i].warning := '';
     if StartIntervalsInUse then begin
@@ -774,6 +752,10 @@ begin
 	if (PreStartLimitsInUse) then begin
 		Pilots[i].warning := Pilots[i].warning + PreStartWarning;
 	end;
+
+  if (FloorInUse) then begin
+    Pilots[i].warning := Pilots[i].warning + FloorWarning;
+  end;
  
   
     if (Pilots[i].Points > -1) then begin

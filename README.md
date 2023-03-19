@@ -2,7 +2,6 @@
 Scoring scripts for use with SeeYou configured for GFA National Rules
 
 AusNationals2023.pas: implements most of the Australian Rules...
-     to do - competition floor
 
 TotalsScript.pas: contains logic to support laydays and pilot pairs.
 
