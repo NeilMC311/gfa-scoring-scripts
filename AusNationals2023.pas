@@ -1,4 +1,4 @@
-program AusNats2023;
+program AusNats2023v2;
 // ***************************************************************************************
 // ****               S e e Y o u    S c o r i n g    S c r i p t                     ****
 // ****                                                                               ****
@@ -12,7 +12,7 @@ program AusNats2023;
 // ****  Neil Campbell, 28 January  2019 v12                                          ****
 // ****  Neil Campbell, 20 October 2020 v13                                           ****
 // ****  Neil Campbell, 13 February 2023 V16                                          ****
-// ****  Neil Campbell, 19 March 2023 V17                                          ****
+// ****  Neil Campbell, 19 March 2023 V17                                             ****
 // ****                                                                               ****
 // **** I N S T R U C T I O N S                                                       ****
 // **** 1. Confirm Local Rules for variations of                                      ****
@@ -52,9 +52,9 @@ program AusNats2023;
 // ****                                                                               ****
 // ****    * Start time bonus uses raw start time independent of any start time       ****
 // ****      intervals in use.                                                        ****
-// ****    * Full start bonus points will be awarded from the start time until the    **** 
+// ****    * Full start bonus points will be awarded from the start time until the    ****
 // ****      end of the Bonus Window.                                                 ****
-// ****    * Bonus points decay in a linear fashion over the bonus time after the     **** 
+// ****    * Bonus points decay in a linear fashion over the bonus time after the     ****
 // ****      starting at the end of the Bonus Window.                                 ****
 // ****    * Maximum allocated start bonus points are also devalued directly          ****
 // ****      propoortionally with the total available points.                         ****
@@ -66,7 +66,7 @@ program AusNats2023;
 // ****                                                                               ****
 // ****    Example: Any pilot who starts within 10 minutes after the start gate opens ****
 // ****             will score full Early Bird points. Points for pilots who start    ****
-// ****             later will reduce by 2% per minute, with all points expiring      **** 
+// ****             later will reduce by 2% per minute, with all points expiring      ****
 // ****             60 minutes after the start gate opens.                            ****
 // ****                                                                               ****
 // ****    Contest Day Tag: STARTBONUS=100;BONUSWINDOW=600;BONUSTIME=3000;            ****
@@ -83,12 +83,12 @@ program AusNats2023;
 // ****    P I L O T   E V E N T   M A R K E R  S T A R T                             ****
 // ****    ===============================================                            ****
 // ****    Day Tag Parameters:                                                        ****
-// ****      PEVWAIT => The pilot must wait a set time after pushing the PEV          **** 
+// ****      PEVWAIT => The pilot must wait a set time after pushing the PEV          ****
 // ****                 before their Start Window commences.                          ****
 // ****      PEVWINDOW => The duration of the Start Window.  The pilot may start at   ****
 // ****                   any time during the Start Window and the start time will    ****
 // ****                   be the actual time of the start.                            ****
-// ****      PEVRESTART (Optional) => The pilot must wait a set time after creating   **** 
+// ****      PEVRESTART (Optional) => The pilot must wait a set time after creating   ****
 // ****                 a PEV before they can create another PEV start window.        ****
 // ****                 If PEVRESTART is not specified it defaults to PEVWAIT         ****
 // ****                                                                               ****
@@ -243,7 +243,7 @@ var
   Pd, Pv,
   Rd, Rv,
   F, S : double;
-  TempString1, TempString2 : string;
+  TempString1, TempString2, TempStr3, TTD, GTD, LPA, LCT : string;
   NumIntervals, Interval, IntervalBuffer, StartBonus, BonusTime, BonusWindow : integer;
   GateIntervalPos, NumIntervalsPos, PilotStartInterval, PilotStartTime : integer;
   PevWait, PevWindow, PEVRestart : integer;
@@ -254,7 +254,7 @@ var
   LastEventNbr, LastValidPevNbr : integer;
   StartBonusInUse, StartIntervalsInUse, PEVStartInUse : Boolean;
   StartIntervalWarning, StartBonusWarning, PEVStartWarning, PEVStartInfo : string;
-  PreStartAltLimit, PreStartGSLimitkmh, PreStartGSLimit, MinGSBelowAltTime, MinAltBelowGSTime, NbrFixes : integer;
+  PreStartAltLimit, PreStartGSLimitkmh, PreStartGSLimit, MinGSBelowAltTime, MinAltBelowGSTime, NbrFixes, Launchfix, Finishfix : integer;
   MinGSBelowAlt, MinAltBelowGS : double;
   PreStartLimitsInUse, PreStartLimitOK : boolean;
   FirstPreGS, FirstPreAlt, PREDEBUG, FirstPEV :boolean;
@@ -263,8 +263,10 @@ var
   EventCount : integer;
   // Competition Floor 
   FloorInUse : Boolean;
-  FloorAlt : Double;
-  FloorWarning : string;
+  FloorAlt, LowPoint, PrevHeight, LastClimbTop : Double;
+  FloorWarning, LowPointTime, TimeBelowDeck : string;
+  LowPointFix,CurrFix,LastClimbFix,fixcount,fixduration,lastfixtime : integer;
+  tbstart,tbend : integer; // Time below deck start and end
   
   
 // ***************************************************************************************
@@ -649,7 +651,8 @@ begin
 		
 	end;  
 	if (pilots[i].PilotTag = 'PREDEBUG') then PREDEBUG:=TRUE else PREDEBUG:=FALSE;
- // Prestart Altitude and Groundspeed Limit Checking - Rule 28.9
+    
+	// Prestart Altitude and Groundspeed Limit Checking - Rule 28.9
 	PreStartWarning := '';
 	if (PreStartLimitsInUse) and (Pilots[i].start >= 0) then begin
 		PreStartLimitOK := FALSE;
@@ -716,56 +719,149 @@ begin
 			end;
 		end;	
 	end;
-// Competition Floor implementation
 
-FloorWarning := '';
-if (FloorInUse) and (Pilots[i].start >= 0) and (Pilots[i].finish >= 0) then begin
-  //showmessage('floor check for ' + Pilots[i].CompID);
-  NbrFixes := GetArrayLength(Pilots[i].Fixes);
-  if NbrFixes > 0 then begin
+  // ----------------- Competition Floor implementation -----------------------------------------------
+  FloorWarning := '';
+  if (FloorInUse) and (Pilots[i].start >= 0) then begin  // and (Pilots[i].finish >= 0) // didnt neccesarily finish 
+    //showmessage('floor check for ' + Pilots[i].CompID);
+    NbrFixes := GetArrayLength(Pilots[i].Fixes);
+    if (NbrFixes > 0) then begin
       //showmessage('> 0 fixes');
-			j := 0;
-			while (Pilots[i].Fixes[j].TSec < pilots[i].start) and (j < NbrFixes - 1) do begin
-				j := J + 1;
-			end;
-      while (Pilots[i].Fixes[j].TSec < Pilots[i].finish) and (j < NbrFixes - 1) and (Pilots[i].Fixes[j].AltQnh >= FloorAlt) do begin
-        j := J + 1;
+      j := 0;
+	  TTD := '';
+	  //------------------------------ TOW TO COMP DECK -------------------------------------------
+	  // Calculate fix for TTD "Tow To Deck" Ignore fixes until comp hard deck reached. 
+	  // (after that "game on" ? hard deck pre-start warnings ?)
+	  while (Pilots[i].Fixes[j].AltQnh <= FloorAlt) and (j < NbrFixes - 1) do begin
+		j := j + 1;
+	  end;
+	  
+      // j should now be the first fix where glider went past comp hard deck on launch
+	  if (j > 1) then begin
+        // Now find 60 seconds worth of fixes above competition deck on tow out climb
+	    fixduration := 0;
+	    lastfixtime := Pilots[i].Fixes[j].Tsec;
+		j := j + 1; // Start from NEXT fix 
+        while (fixduration < 60) and (j < NbrFixes - 1) do begin
+	      if (Pilots[i].Fixes[j].AltQnh >= FloorAlt) then begin
+		    // Still above hard deck on tow out
+		    fixduration := fixduration + (Pilots[i].Fixes[j].Tsec - lastfixtime);
+		  end
+		  else begin
+		    fixduration := 0;
+		  end;
+		  lastfixtime := Pilots[i].Fixes[j].Tsec;
+		  j := j + 1;
+        end;
+	 
+	    Launchfix := j; // a bit of wriggle room
+		TTD := SecsToTOD(Pilots[i].Fixes[Launchfix].Tsec)+':('+IntToStr(fixduration)+'s)'; // Climb To Deck 
+	  end;	  
+	  	  
+	  
+	  //------------------------------ FINAL GLIDE TO COMP DECK -------------------------------------------
+	  // Now step backwards from final fix to find comp floor on final glide
+	  j := NbrFixes - 1;
+	  GTD := '';
+	  while (j < Launchfix) and (Pilots[i].Fixes[j].AltQnh < FloorAlt) and (j > 1) do begin
+		j := j - 1;
+	  end;	  
+	  
+	  // The point where we find contest deck on final glide is now j if j > 1
+	  if (j > 1) then begin
+	    // Now find 60 seconds worth of fixes below competition deck on final glide
+	    fixduration := 0;
+	    lastfixtime := Pilots[i].Fixes[j].Tsec;
+		j := j - 1; // Start from PREVIOUS fix and step backwards
+        while (fixduration < 60) and (j > 0) do begin
+	      if (Pilots[i].Fixes[j].AltQnh >= FloorAlt) then begin
+		    // Still below hard deck on final glide
+			// Note that this is the reverse of above as we are going back in time
+		    fixduration := fixduration + (lastfixtime - Pilots[i].Fixes[j].Tsec);
+		  end
+		  else begin
+		    fixduration := 0; // reset unti we get a full minute
+		  end;
+		  lastfixtime := Pilots[i].Fixes[j].Tsec;
+		  j := j - 1;
+        end;
+	 
+	    Finishfix := j; // Fix just before comp deck on final glide
+		GTD := GTD + SecsToTOD(Pilots[i].Fixes[Finishfix].Tsec)+':('+IntToStr(fixduration)+'s)'; // Final Glide To Deck 
+	  end;	  
+	  
+	  //------------------------------ NOW CHECK FOR LOW POINTS -------------------------------------------
+	  // Now check from Launchfix to finishfix if they go below hard deck
+	  j := Launchfix;
+	  Lowpoint := Pilots[i].Fixes[Launchfix].AltQnh;
+    
+	  // Times below contest deck
+      tbstart := 0; 
+	  TimeBelowDeck := 'Time(s):';
+	  while (j < Finishfix) and (j < NbrFixes - 1) do begin
+	    CurrFix := j;
+		if (Pilots[i].Fixes[j].AltQnh < FloorAlt) and (tbstart = 0) then begin
+		  tbstart := Pilots[i].Fixes[j].Tsec;
+		end;
+		
+		if (Pilots[i].Fixes[j].AltQnh >= FloorAlt) and (tbstart > 0) then begin
+		  tbend := Pilots[i].Fixes[j].Tsec;
+		  TimeBelowDeck := TimeBelowDeck +'  ('+SecsToTOD(tbstart)+'-'+SecsToTOD(tbend)+')';
+		  tbstart := 0;
+		end;
+		
+		if (Pilots[i].Fixes[j].AltQnh < LowPoint) then begin
+		  LowPoint := Pilots[i].Fixes[j].AltQnh;
+		  LowPointFix := CurrFix;
+		end;
+	    j := j + 1;
       end;
-      if (Pilots[i].Fixes[j].AltQnh < FloorAlt) then begin
-        FloorWarning := '*** Below Competition Floor ***';
-      end;
+      LowPointTime := SecsToTOD(Pilots[i].Fixes[LowPointFix].Tsec);
+      LPA := FormatFloat('0.00',LowPoint*3.281)+'ft'; // LPA Low Point Altitude.
 
-  end;
-end;  
-      // Manage User Warnings
-	Pilots[i].warning := '';
-    if StartIntervalsInUse then begin
-      Pilots[i].warning := Pilots[i].user_str1;
+      // Diagnostic Data string
+      TempStr3 := 'TTD:'+TTD+' GTD:'+GTD+'   LowPoint:'+LPA+' at '+LowPointTime;	  
+    	
+      // We found a fix between Launch and final glide where the deck was breached.
+	  if (LowPoint < FloorAlt) then begin
+        FloorWarning := 
+		  'Below Floor: (' +LPA+' < '+FloatToStr(FloorAlt*3.281)+'ft) at '+TimeBelowDeck+#10+TempStr3;
+       end
+	  else begin
+	    FloorWarning := TempStr3;
+      end;
     end;
+  end;  
   
-    // Start Bonuses in Use
-    if  (StartBonusInUse) and (pilots[i].td3 > 0.0) then begin
-       Pilots[i].warning := Pilots[i].warning + #10'Start Bonus Points = ' + formatfloat('0.00',Pilots[i].td3 * Pm / Pmax);
-    end;
+  // ---------------------- Manage User Warnings ----------------------------------------------------
+  Pilots[i].warning := '';
+  if StartIntervalsInUse then begin
+    Pilots[i].warning := Pilots[i].user_str1;
+  end;
+  
+  // Start Bonuses in Use
+  if  (StartBonusInUse) and (pilots[i].td3 > 0.0) then begin
+    Pilots[i].warning := Pilots[i].warning + #10'Start Bonus Points = ' + formatfloat('0.00',Pilots[i].td3 * Pm / Pmax);
+  end;
+	 
+  if (PEVStartInUse) then begin
+    Pilots[i].warning := Pilots[i].warning + PEVStartWarning;
+  end;
 	
-	if (PEVStartInUse) then begin
-		Pilots[i].warning := Pilots[i].warning + PEVStartWarning;
-	end;
-	
-	if (PreStartLimitsInUse) then begin
-		Pilots[i].warning := Pilots[i].warning + PreStartWarning;
-	end;
+  if (PreStartLimitsInUse) then begin
+    Pilots[i].warning := Pilots[i].warning + PreStartWarning;
+  end;
 
   if (FloorInUse) then begin
     Pilots[i].warning := Pilots[i].warning + FloorWarning;
   end;
- 
-  
-    if (Pilots[i].Points > -1) then begin
-      // Round to nearest whole point (rule 44.1)
-      Pilots[i].Points := Round(S);
-      Pilots[i].PointString := FormatFloat('0',Pilots[i].Points);
-    end;
+   
+  if (Pilots[i].Points > -1) then begin
+    // Round to nearest whole point (rule 44.1)
+    Pilots[i].Points := Round(S);
+    Pilots[i].PointString := FormatFloat('0',Pilots[i].Points);
+  end;
+
   end; // For loop
 
   // Set up results for display
