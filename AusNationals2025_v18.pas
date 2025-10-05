@@ -2,7 +2,7 @@ program AusNats2025_v18;
 // ***************************************************************************************
 // ****               S e e Y o u    S c o r i n g    S c r i p t                     ****
 // ****                                                                               ****
-// ****                 Australian Nationals Rules 2018 v2.9                          ****
+// ****                 Australian Nationals Rules 2025 v18                           ****
 // ****                                                                               ****
 // ****  Last Updated                                                                 ****
 // ****  Tim Shirley, 11 Oct 2016 v7                                                  ****
