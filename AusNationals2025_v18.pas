@@ -128,9 +128,7 @@ program AusNats2025_v18;
 // ****                                                                               ****
 // ****    D I S T A N C E  H A N D I C A P P E D  T A S K                            ****
 // ****    ========================================================================== ****
-// ****    Australian Rules 46.9 & 51                                                 ****
-// ****    EXCEPT: 46.4 For DHT all finishers will be scored using a handicap         ****
-// ****            of 1000.                                                           ****
+// ****    Australian Rules 46.4, 46.9 & 51                                           ****
 // ****                                                                               ****
 // ****    Day Tag Parameter will active DHT scoring:                                 ****
 // ****      HCAP=DHT                                                                 ****
@@ -190,8 +188,7 @@ program AusNats2025_v18;
 // ****                                                                               ****
 // ***************************************************************************************
 // ****    TO DO                                                                      ****
-// ****    1.  Clarify rule 46.4                                                      ****
-// ****    2.  Replace competition floor logic with streamlined logic from the        ****
+// ****    1.  Replace competition floor logic with streamlined logic from the        ****
 // ****        Narromine WGC23 scripts                                                ****
 // ****                                                                               ****
 // ****                                                                               ****
