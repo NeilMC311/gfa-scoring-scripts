@@ -1,4 +1,4 @@
-program AusNats2025_v18;
+program AusNats2025_v18_1;
 // ***************************************************************************************
 // ****               S e e Y o u    S c o r i n g    S c r i p t                     ****
 // ****                                                                               ****
@@ -14,6 +14,7 @@ program AusNats2025_v18;
 // ****  Neil Campbell, 13 February 2023 V16                                          ****
 // ****  Neil Campbell, 19 March 2023 V17                                             ****
 // ****  Neil Campbell, 05 October 2025 V18                                           ****
+// ****  Neil Campbell, 25 November 2025 V18.1                                        ****
 // ****                                                                               ****
 // **** I N S T R U C T I O N S                                                       ****
 // **** 1. Confirm Local Rules for variations of                                      ****
@@ -144,6 +145,10 @@ program AusNats2025_v18;
 // ***************************************************************************************
 // ****                                                                               ****
 // ****   Version Details                                                             ****  
+// ****                                                                               ****
+// ****   V18.1 - Minor Enhancement                                                   ****
+// ****           - Include DHT text in INFO 2 when DHT scoring is active to make it  ****
+// ****             obvious when someone looks at Soaringspot                         ****
 // ****                                                                               ****
 // ****   V18 - Support for National Rules 2025 Revision 5 July 2025                  ****
 // ****           - Implementation of Distance Handicapping                           ****
@@ -887,6 +892,10 @@ begin
   else begin
     Info2 := 'Day Devaluation Not In Use, N='+IntToStr(N);
   end;  
+
+  if DHTInUse then begin
+    Info2 := Info2 + ', DHT Scoring';
+  end;
 
     
   if StartIntervalsInUse then begin
